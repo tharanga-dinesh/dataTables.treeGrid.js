@@ -79,6 +79,7 @@
             var treeGridRows = {};
             var expandIcon = $(this.s.expandIcon);
             var collapseIcon = $(this.s.collapseIcon);
+            var childAjax = this.s.childAjax;
 
             var resetTreeGridRows = function (index) {
                 var indexes = [];
@@ -128,14 +129,22 @@
                 var row = dataTable.row(this);
                 var index = row.index();
                 var data = row.data();
-
+                
                 var td = $(dataTable.cell(this).node());
                 var paddingLeft = parseInt(td.css('padding-left'), 10);
                 var layer = parseInt(td.find('span').css('margin-left') || 0, 10) / sLeft;
+
+                var child = td.find('a.child').clone();    
+                
+                if (childAjax) {					
+                	var url = child.attr('href'); 
+                	resetChildren( url , data.children );   
+                }
+                
                 var icon = collapseIcon.clone();
                 icon.css('marginLeft', layer * sLeft + 'px');
                 td.removeClass('treegrid-control').addClass('treegrid-control-open');
-                td.html('').append(icon);
+                td.html('').append(child).append(icon);
 
                 if (data.children && data.children.length) {
                     var subRows = treeGridRows[index] = [];
@@ -166,11 +175,12 @@
                 select && (selectedIndexes = dataTable.rows({selected: true}).indexes().toArray());
 
                 var td = $(dataTable.cell(this).node());
-                var layer = parseInt(td.find('span').css('margin-left') || 0, 10) / sLeft;
+                var layer = parseInt(td.find('span').css('margin-left') || 0, 10) / sLeft; 
+                var child = td.find('a.child').clone();  
                 var icon = expandIcon.clone();
                 icon.css('marginLeft', layer * sLeft + 'px');
                 td.removeClass('treegrid-control-open').addClass('treegrid-control');
-                td.html('').append(icon);
+                td.html('').append(child).append(icon);
 
                 var index = dataTable.row(this).index();
                 resetTreeGridRows(index);
@@ -224,6 +234,23 @@
             });
         }
     });
+
+    function resetChildren(url, children) { 
+		$.ajax({ 
+            url : url, 
+            async: false,
+            'success' : function(data) {   
+            	children.splice(0,children.length);
+            	$.each(data, function(index, item) { 
+            		children.push(item); 
+            	});   
+            },
+            'error' : function(request,error)
+            {
+                alert("Request: "+JSON.stringify(request));
+            }
+        });   
+	};
 
     function selectParent(dataTable, index) {
         var row = dataTable.row(index);
@@ -281,7 +308,8 @@
     TreeGrid.defaults = {
         left: 12,
         expandIcon: '<span>+</span>',
-        collapseIcon: '<span>-</span>'
+        collapseIcon: '<span>-</span>',
+        childAjax: false
     };
 
     TreeGrid.version = '1.0.0';
