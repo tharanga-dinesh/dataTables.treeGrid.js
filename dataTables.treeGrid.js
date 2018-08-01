@@ -103,7 +103,8 @@
                         delete treeGridRows[index];
                         $(dataTable.row(index).node()).find('.treegrid-control-open').each(function (i, td) {
                             $(td).removeClass('treegrid-control-open').addClass('treegrid-control');
-                            $(td).html('').append(expandIcon.clone());
+                            var child = $(td).find('a.child').clone();  
+                            $(td).html('').append(child).append(expandIcon.clone());
                         });
                     }
                 });
@@ -156,7 +157,7 @@
                         var left = (layer + 1) * sLeft;
                         $(node).attr('parent-index', index);
                         treegridTd.find('span').css('marginLeft', left + 'px');
-                        treegridTd.next().css('paddingLeft', paddingLeft + left + 'px');
+                        treegridTd.next().css('padding-left', paddingLeft + left + 'px');
                         $(node).insertAfter(prevRow);
                         prevRow = node;
                         subRows.push(node);
