@@ -289,18 +289,8 @@
     }
     
     function putIndexs (ret, index, ary, $filted){
-    	if (ret.length > 0) {			
-    		for (var i = 0; i < ret.length; i++) {  
-    			var val = ret[i]; 
-    			if(index !== val){ 
-    				ret.add(index);  
-    				ary = ary.concat($filted);
-    			}
-    		}
-		} else {
-			ret.add(index); 
-			ary = ary.concat($filted);
-		}
+        ret.add(index); 
+        ary = ary.concat($filted); 
     };
 
     function resetChildren(url, children) { 
