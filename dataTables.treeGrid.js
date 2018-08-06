@@ -83,8 +83,11 @@
 
             var resetTreeGridRows = function (index) {
                 var indexes = [];
-                if (index) {
+                if (index instanceof Number) {/*add:param ary,fix:[if(index)...]'index===0' @autor:sdjkjkjjk*/
                     indexes.push(index);
+                }
+                else if(index instanceof Array) {
+                    indexes = index ;
                 }
                 else {
                     for (var prop in treeGridRows) {
@@ -92,6 +95,13 @@
                             indexes.push(prop);
                         }
                     }
+                }
+                /*add:before modify treeGridRows .@autor:sdjkjkjjk*/
+                var oldTreeGridRowsItem = {};
+                for(var it in treeGridRows) {
+                    if(it * 1 === index)
+                        continue ;
+                    oldTreeGridRowsItem[it] = dataTable.row(it).node() ;
                 }
                 indexes.forEach(function (index) {
                     var subRows = treeGridRows[index];
@@ -108,6 +118,16 @@
                         });
                     }
                 });
+                /*add:after modify treeGridRows .@autor:sdjkjkjjk*/
+                for(var it in treeGridRows) {
+                    var newIndex = dataTable.rows($(oldTreeGridRowsItem[it])).indexes()[0] ;
+                    treeGridRows[newIndex] = treeGridRows[it] ;
+                    if(newIndex !== it * 1){
+                        delete treeGridRows[it];
+                        $(dataTable.row("[parent-index='" + it + "']").node()).attr('parent-index',newIndex) ;
+                    }
+
+                }
             };
 
             var resetEvenOddClass = function (dataTable) {
@@ -183,8 +203,9 @@
                 td.removeClass('treegrid-control-open').addClass('treegrid-control');
                 td.html('').append(child).append(icon);
 
-                var index = dataTable.row(this).index();
-                resetTreeGridRows(index);
+                var index = dataTable.row(this).index(); 
+                var indexAry = getChildrenCollapseIndexs(dataTable,index) ;/*fix:index ary @autor:sdjkjkjjk*/
+                resetTreeGridRows(indexAry); 
                 resetEvenOddClass(dataTable);
                 select && setTimeout(function () {
                     dataTable.rows(selectedIndexes).select();
@@ -235,6 +256,52 @@
             });
         }
     });
+
+    function getChildrenCollapseIndexs(dataTable,index) {
+    	var ret = new Set();
+
+        var $filted = $(dataTable.rows('[parent-index="' + index + '"]').nodes()) ;
+        ret.add(index);
+
+        var ary = [] ;
+        do {
+            ary = [] ;
+            //set recursive children collapse indexs
+            setChildrenCollapseIndexs(dataTable, $filted, ary, ret); /*fix:recursive index ary @autor:tharanga-dinesh*/
+            $.extend($filted, ary, true);
+        } while(ary.length > 0);
+ 
+        return Array.from(ret);
+    }
+    
+    function setChildrenCollapseIndexs (dataTable, $filted, ary, ret){
+    	for(var i = 0; i < $filted.length; i ++) { 
+            var f = $filted[i] ;
+            var parentIndex = dataTable.rows(f).indexes()[0];
+            var $filted2 = $(dataTable.rows('[parent-index="' + parentIndex + '"]').nodes()); 
+            
+            if ($filted2.length > 0) {
+            	setChildrenCollapseIndexs(dataTable, $filted2, ary, ret);
+			}
+            //put collapse indexs
+            putIndexs(ret, parentIndex, ary, $filted2);
+    	}
+    }
+    
+    function putIndexs (ret, index, ary, $filted){
+    	if (ret.length > 0) {			
+    		for (var i = 0; i < ret.length; i++) {  
+    			var val = ret[i]; 
+    			if(index !== val){ 
+    				ret.add(index);  
+    				ary = ary.concat($filted);
+    			}
+    		}
+		} else {
+			ret.add(index); 
+			ary = ary.concat($filted);
+		}
+    };
 
     function resetChildren(url, children) { 
 		$.ajax({ 
